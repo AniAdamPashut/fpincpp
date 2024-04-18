@@ -4,6 +4,7 @@
 #include <string>
 #include <format>
 #include <variant>
+#include <numeric>
 #include <functional>
 
 using std::string;
@@ -34,7 +35,7 @@ template <typename T, typename V>
 Parser<tuple<T, V>> andThen(Parser<T> p1, Parser<V> p2) {
 	auto inner = [p1, p2](string input) -> ParserResult<std::tuple<std::tuple<T, V>, std::string>> {
 		auto res = run(p1, input);
-		if (res.index() > 0) {
+		if (res.index() == 1) {
 			return get<1>(res);
 		}
 
@@ -42,7 +43,7 @@ Parser<tuple<T, V>> andThen(Parser<T> p1, Parser<V> p2) {
 		T value1 = get<0>(scc);
 		string rest = get<1>(scc);
 		auto res2 = run(p2, rest);
-		if (res2.index() > 0) {
+		if (res2.index() == 1) {
 			return get<1>(res2);
 		}
 		Success<V> scc2 = get<Success<V>>(res2);
@@ -69,6 +70,29 @@ Parser<T> orElse(Parser<T> p1, Parser<T> p2) {
 		};
 
 	return Parser<T> {
+		.inner = inner
+	};
+}
+
+
+Parser<char> anyOf(string input);
+Parser<char> parseDigit();
+
+template<typename T, typename V>
+Parser<V> map(std::function<V(T)> f, Parser<T> p) {
+	auto inner = [f, p](string input) {
+		auto res = run(p, input);
+		if (res.index() == 1) {
+			return get<1>(res);
+		}
+
+		Success<T> scc = get<0>(res);
+		T inner = get<0>(scc);
+		V new_value = f(inner);
+		return std::make_tuple(new_value, get<1>(res));
+		};
+
+	return Parser<V> {
 		.inner = inner
 	};
 }

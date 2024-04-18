@@ -1,8 +1,3 @@
-#include <tuple>
-#include <string>
-#include <format>
-#include <variant>
-#include <functional>
 #include "parser.hpp"
 
 Parser<char> pchar(char characterToMatch) {
@@ -21,3 +16,18 @@ Parser<char> pchar(char characterToMatch) {
 		.inner = inner
 	};
 }
+
+
+
+Parser<char> anyOf(string input) {
+	Parser<char> first = pchar(input[0]);
+	for (char c : input.substr(1)) {
+		first = orElse(first, pchar(c));
+	}
+	return first;
+}
+
+Parser<char> parseDigit() {
+	return anyOf("1234567890");
+}
+
